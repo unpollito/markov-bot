@@ -40,7 +40,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                 None => "Markov says: sorry, I don't know what to say".to_string(),
                             };
                             sender.send_message(chat_id, &message).await;
-                        } else if !text.starts_with("/") {
+                        } else if !text.is_empty() && !text.starts_with("/") {
                             for line in text.lines() {
                                 chain.add_sentence(line);
                             }

@@ -25,6 +25,7 @@ impl ChatMarkovChain {
         let words: Vec<String> = sentence
             .split_whitespace()
             .map(|word| word.to_lowercase())
+            .filter(|word| !word.starts_with("http://") && !word.starts_with("https://"))
             .collect();
         if words.is_empty() {
             return;
