@@ -56,6 +56,8 @@ impl ChatMarkovChain {
             None => 1,
         };
         predecessor_root_entry.insert(successor.to_string(), new_val);
+        self.entries
+            .insert(predecessor.to_string(), predecessor_root_entry);
 
         if self.entries.get(successor).is_none() {
             self.entries.insert(successor.to_string(), HashMap::new());
@@ -87,7 +89,9 @@ impl ChatMarkovChain {
             }
             let next_word_index = rng.gen_range(0..candidates.len());
             let next_word = candidates[next_word_index].to_string();
-            words.push(next_word.to_string());
+            if next_word != MARKOV_CHAIN_END {
+                words.push(next_word.to_string());
+            }
             current_entry = self.entries.get(&next_word).unwrap();
         }
 

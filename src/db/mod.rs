@@ -16,7 +16,7 @@ pub struct Db {
 }
 
 impl Db {
-    pub async fn new(config: Config) -> Result<Db, mongodb::error::Error> {
+    pub async fn new(config: &Config) -> Result<Db, mongodb::error::Error> {
         let Config {
             mongodb_user,
             mongodb_password,
@@ -35,7 +35,7 @@ impl Db {
         return Ok(Db { collection });
     }
 
-    pub async fn get_chat_id(&self, chat_id: i64) -> Result<ChatMarkovChain, Box<dyn Error>> {
+    pub async fn get_by_chat_id(&self, chat_id: i64) -> Result<ChatMarkovChain, Box<dyn Error>> {
         let filter = doc! {"chat_id": chat_id};
         let mut cursor = self.collection.find(filter, None).await?;
         let mut chat_data: Option<ChatMarkovChain> = None;
@@ -51,10 +51,14 @@ impl Db {
         }
 
         match chat_data {
-            None => Ok(Db::get_empty_chain(chat_id)),
-            Some(entry) => {
-                Db::validate_chain(&entry)?;
-                Ok(entry)
+            None => {
+                let chain = Db::get_empty_chain(chat_id);
+                self.collection.insert_one(&chain, None).await?;
+                Ok(chain)
+            }
+            Some(chain) => {
+                Db::validate_chain(&chain)?;
+                Ok(chain)
             }
         }
     }
