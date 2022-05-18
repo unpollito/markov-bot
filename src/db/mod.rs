@@ -1,5 +1,9 @@
 use futures::stream::TryStreamExt;
-use mongodb::{bson::doc, options::ClientOptions, Client, Collection};
+use mongodb::{
+    bson::{doc, to_document},
+    options::ClientOptions,
+    Client, Collection,
+};
 use std::{collections::HashMap, error::Error, fmt};
 
 use crate::{
@@ -49,14 +53,26 @@ impl Db {
         match chat_data {
             None => Ok(Db::get_empty_chain(chat_id)),
             Some(entry) => {
-                let validation_error = Db::get_chain_validation_error(&entry);
-                if validation_error.is_empty() {
-                    Ok(entry)
-                } else {
-                    Err(Box::new(DbError::new(validation_error)))
-                }
+                Db::validate_chain(&entry)?;
+                Ok(entry)
             }
         }
+    }
+
+    pub async fn save_chain(&self, chain: &ChatMarkovChain) -> Result<(), Box<dyn Error>> {
+        Db::validate_chain(chain)?;
+        let entries_document = to_document(&chain);
+        if let Err(e) = entries_document {
+            return Err(Box::new(e));
+        }
+        self.collection
+            .update_one(
+                doc! {"chat_id": chain.chat_id},
+                doc! {"$set": entries_document.unwrap() },
+                None,
+            )
+            .await?;
+        Ok(())
     }
 
     fn get_empty_chain(chat_id: i64) -> ChatMarkovChain {
@@ -66,25 +82,31 @@ impl Db {
         return ChatMarkovChain { chat_id, entries };
     }
 
-    fn get_chain_validation_error(chain: &ChatMarkovChain) -> String {
+    fn validate_chain(chain: &ChatMarkovChain) -> Result<(), DbError> {
         if chain.entries.get(MARKOV_CHAIN_START).is_none() {
-            return format!("No chain start for chat ID {}", chain.chat_id);
+            return Err(DbError::new(format!(
+                "No chain start for chat ID {}",
+                chain.chat_id
+            )));
         }
         if chain.entries.get(MARKOV_CHAIN_END).is_none() {
-            return format!("No chain end for chat ID {}", chain.chat_id);
+            return Err(DbError::new(format!(
+                "No chain end for chat ID {}",
+                chain.chat_id
+            )));
         }
         let entries = &chain.entries;
         for (entry_word, entry) in entries.into_iter() {
             for successor in entry {
                 if chain.entries.get(&successor.word).is_none() {
-                    return format!(
+                    return Err(DbError::new(format!(
                         "Could not find successor {} for word {} in chat ID {}",
                         &successor.word, &entry_word, chain.chat_id
-                    );
+                    )));
                 }
             }
         }
-        String::from("")
+        Ok(())
     }
 }
 
