@@ -18,33 +18,37 @@ async fn main() -> Result<(), Box<dyn Error>> {
             None => break,
             Some(response) => {
                 for update in response.result {
-                    let text = match update.message.text {
-                        Some(text) => text,
-                        None => String::from(""),
-                    };
-                    let chat_id = update.message.chat.id;
-                    let username = update.message.from.username;
+                    if let Some(message) = update.message {
+                        let text = match message.text {
+                            Some(text) => text,
+                            None => String::from(""),
+                        };
+                        let chat_id = message.chat.id;
+                        let username = message.from.username;
 
-                    log::debug!(
-                        "Received message from {} (chat ID: {}): \"{}\"",
-                        username,
-                        chat_id,
-                        text
-                    );
+                        log::debug!(
+                            "Received message from {} (chat ID: {}): \"{}\"",
+                            username,
+                            chat_id,
+                            text
+                        );
 
-                    if !update.message.from.is_bot {
-                        let mut chain = db.get_by_chat_id(chat_id).await?;
-                        if text == "/markov" || text.starts_with("/markov ") {
-                            let message = match chain.generate_sentence() {
-                                Some(sentence) => sentence,
-                                None => "Markov says: sorry, I don't know what to say".to_string(),
-                            };
-                            sender.send_message(chat_id, &message).await;
-                        } else if !text.is_empty() && !text.starts_with("/") {
-                            for line in text.lines() {
-                                chain.add_sentence(line);
+                        if !message.from.is_bot {
+                            let mut chain = db.get_by_chat_id(chat_id).await?;
+                            if text == "/markov" || text.starts_with("/markov ") {
+                                let message = match chain.generate_sentence() {
+                                    Some(sentence) => sentence,
+                                    None => {
+                                        "Markov says: sorry, I don't know what to say".to_string()
+                                    }
+                                };
+                                sender.send_message(chat_id, &message).await;
+                            } else if !text.is_empty() && !text.starts_with("/") {
+                                for line in text.lines() {
+                                    chain.add_sentence(line);
+                                }
+                                db.save_chain(&chain).await?;
                             }
-                            db.save_chain(&chain).await?;
                         }
                     }
                 }

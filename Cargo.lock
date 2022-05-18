@@ -1339,7 +1339,7 @@ dependencies = [
 [[package]]
 name = "simple-telegram-bot"
 version = "0.1.0"
-source = "git+https://github.com/unpollito/simple-telegram-bot?branch=main#e045f16d1c00c287927aaf44ef7f4686c588af00"
+source = "git+https://github.com/unpollito/simple-telegram-bot?rev=74a96631#74a966311c17cf81be551e09e6ed79ede2be45d6"
 dependencies = [
  "log",
  "reqwest",
