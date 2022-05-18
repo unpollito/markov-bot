@@ -11,6 +11,7 @@ futures = "0.3"
 log = "0.4"
 mongodb = "2.2.1"
 pretty_env_logger = "0.4"
+rand = "0.8.5"
 serde = { version = "1.0.137", features = ["derive"] }
 simple-telegram-bot = { git = "https://github.com/unpollito/simple-telegram-bot", branch = "main" }
 tokio = { version = "1.18.2", features = ["full"] }

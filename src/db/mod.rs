@@ -8,7 +8,7 @@ use std::{collections::HashMap, error::Error, fmt};
 
 use crate::{
     config::Config,
-    markov::{constants::*, types::*},
+    markov::{constants::*, ChatMarkovChain},
 };
 
 pub struct Db {
@@ -59,6 +59,8 @@ impl Db {
         }
     }
 
+    // TODO: saving the entire chain each time can't be too efficient.
+    // We should just save the parts which get changed.
     pub async fn save_chain(&self, chain: &ChatMarkovChain) -> Result<(), Box<dyn Error>> {
         Db::validate_chain(chain)?;
         let entries_document = to_document(&chain);
@@ -76,9 +78,9 @@ impl Db {
     }
 
     fn get_empty_chain(chat_id: i64) -> ChatMarkovChain {
-        let mut entries: HashMap<String, Vec<ChatMarkovChainSuccessor>> = HashMap::new();
-        entries.insert(String::from(MARKOV_CHAIN_START), vec![]);
-        entries.insert(String::from(MARKOV_CHAIN_END), vec![]);
+        let mut entries: HashMap<String, HashMap<String, u32>> = HashMap::new();
+        entries.insert(String::from(MARKOV_CHAIN_START), HashMap::new());
+        entries.insert(String::from(MARKOV_CHAIN_END), HashMap::new());
         return ChatMarkovChain { chat_id, entries };
     }
 
@@ -97,11 +99,11 @@ impl Db {
         }
         let entries = &chain.entries;
         for (entry_word, entry) in entries.into_iter() {
-            for successor in entry {
-                if chain.entries.get(&successor.word).is_none() {
+            for (successor, _) in entry {
+                if chain.entries.get(successor).is_none() {
                     return Err(DbError::new(format!(
                         "Could not find successor {} for word {} in chat ID {}",
-                        &successor.word, &entry_word, chain.chat_id
+                        successor, &entry_word, chain.chat_id
                     )));
                 }
             }

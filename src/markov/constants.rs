@@ -1,2 +1,5 @@
-pub const MARKOV_CHAIN_START: &str = "#markovchainstart#";
-pub const MARKOV_CHAIN_END: &str = "#markovchainend#";
+pub const MARKOV_CHAIN_START: &str = "#MARKOVCHAINSTART#";
+pub const MARKOV_CHAIN_END: &str = "#MARKOVCHAINEND#";
+
+pub const RANDOM_START_PROBABILITY: f64 = 0.8;
+pub const RANDOM_END_PROBABILITY: f64 = 0.01;

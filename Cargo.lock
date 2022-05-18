@@ -685,6 +685,7 @@ dependencies = [
  "log",
  "mongodb",
  "pretty_env_logger",
+ "rand",
  "serde",
  "simple-telegram-bot",
  "tokio",
