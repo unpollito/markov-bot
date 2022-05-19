@@ -35,7 +35,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
                         if !message.from.is_bot {
                             let mut chain = db.get_by_chat_id(chat_id).await?;
-                            if text == "/markov" || text.starts_with("/markov ") {
+                            if text == "/markov"
+                                || text.starts_with("/markov ")
+                                || text.starts_with("/markov@")
+                            {
                                 let message = match chain.generate_sentence() {
                                     Some(sentence) => sentence,
                                     None => {
@@ -43,6 +46,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                     }
                                 };
                                 sender.send_message(chat_id, &message).await;
+                            } else if text == "/markov_clear"
+                                || text.starts_with("/markov_clear ")
+                                || text.starts_with("/markov_clear@")
+                            {
+                                db.delete_chain(chat_id).await?;
                             } else if !text.is_empty() && !text.starts_with("/") {
                                 for line in text.lines() {
                                     chain.add_sentence(line);

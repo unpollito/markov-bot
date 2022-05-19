@@ -82,18 +82,41 @@ impl ChatMarkovChain {
         while !current_entry.is_empty() && rng.gen::<f64>() >= RANDOM_END_PROBABILITY {
             // Each word will be chosen with a probability weighted by the number of times
             // it followed the previous word.
+            // E.g.: candidates = ["foo", "bar", "foobar"], aggregate_num_times = [1, 3, 6]
+            // means that "foo" has 1 chance to be chosen, "bar" has 2 (3 - 1) and "foobar"
+            // has 3 (6 - 3).
             let mut candidates: Vec<&str> = vec![];
+            let mut aggregate_num_times: Vec<u32> = vec![];
             for (word, num_times) in current_entry.into_iter() {
-                for _ in 0..*num_times {
-                    candidates.push(word);
-                }
+                candidates.push(word);
+                aggregate_num_times.push(if aggregate_num_times.len() > 0 {
+                    aggregate_num_times[aggregate_num_times.len() - 1] + num_times
+                } else {
+                    *num_times
+                });
             }
-            let next_word_index = rng.gen_range(0..candidates.len());
-            let next_word = candidates[next_word_index].to_string();
+            let random_number =
+                rng.gen_range(0..aggregate_num_times[aggregate_num_times.len() - 1]);
+            // Find the first word with aggregate_num_times > random_number
+            let filtered_entries: Vec<usize> = aggregate_num_times
+                .into_iter()
+                .enumerate()
+                .filter(|(_, aggregate)| *aggregate > random_number)
+                .into_iter()
+                .map(|(index, _)| index)
+                .take(1)
+                .collect::<Vec<usize>>();
+            let next_word_index = filtered_entries.get(0);
+            if let None = next_word_index {
+                panic!(
+                    "Something went really wrong - couldn't find the next word in a Markov chain"
+                );
+            }
+            let next_word = *candidates.get(*next_word_index.unwrap()).unwrap();
             if next_word != MARKOV_CHAIN_END {
                 words.push(next_word.to_string());
             }
-            current_entry = self.entries.get(&next_word).unwrap();
+            current_entry = self.entries.get(next_word).unwrap();
         }
 
         Some(words.join(" "))

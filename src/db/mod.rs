@@ -81,6 +81,13 @@ impl Db {
         Ok(())
     }
 
+    pub async fn delete_chain(&self, chat_id: i64) -> Result<(), Box<dyn Error>> {
+        self.collection
+            .delete_one(doc! {"chat_id": chat_id}, None)
+            .await?;
+        Ok(())
+    }
+
     fn get_empty_chain(chat_id: i64) -> ChatMarkovChain {
         let mut entries: HashMap<String, HashMap<String, u32>> = HashMap::new();
         entries.insert(String::from(MARKOV_CHAIN_START), HashMap::new());
