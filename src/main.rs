@@ -42,7 +42,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                 let message = match chain.generate_sentence() {
                                     Some(sentence) => sentence,
                                     None => {
-                                        "Markov says: sorry, I don't know what to say".to_string()
+                                        "Markov says: sorry, I don't know what to say.".to_string()
                                     }
                                 };
                                 sender.send_message(chat_id, &message).await;
@@ -51,6 +51,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                 || text.starts_with("/markov_clear@")
                             {
                                 db.delete_chain(chat_id).await?;
+                                sender
+                                    .send_message(
+                                        chat_id,
+                                        "Markov says: I've deleted all your previous history.",
+                                    )
+                                    .await;
                             } else if !text.is_empty() && !text.starts_with("/") {
                                 for line in text.lines() {
                                     chain.add_sentence(line);
