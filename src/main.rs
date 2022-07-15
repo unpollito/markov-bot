@@ -1,5 +1,6 @@
-use simple_telegram_bot::SimpleTelegramBot;
 use std::error::Error;
+
+use simple_telegram_bot::SimpleTelegramBot;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -24,7 +25,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
                             None => String::from(""),
                         };
                         let chat_id = message.chat.id;
-                        let username = message.from.username;
+                        let username = if let Some(username) = message.chat.username {
+                            username
+                        } else if let Some(first_name) = message.chat.first_name {
+                            first_name
+                        } else {
+                            String::from("(unknown)")
+                        };
 
                         log::debug!(
                             "Received message from {} (chat ID: {}): \"{}\"",
